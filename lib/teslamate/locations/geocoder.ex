@@ -3,10 +3,17 @@ defmodule TeslaMate.Locations.Geocoder do
 
   alias TeslaMate.Locations.Address
 
-  plug Tesla.Middleware.BaseUrl, Application.get_env(:teslamate, :nominatim_api)
-  plug Tesla.Middleware.Headers, [{"user-agent", "TeslaMate/#{@version}"}]
-  plug Tesla.Middleware.JSON
-  plug Tesla.Middleware.Logger, debug: true, log_level: &log_level/1
+  defp client do
+    Tesla.client(
+      [
+        {Tesla.Middleware.BaseUrl, Application.get_env(:teslamate, :nominatim_api)},
+        {Tesla.Middleware.Headers, [{"user-agent", "TeslaMate/#{@version}"}]},
+        Tesla.Middleware.JSON,
+        {Tesla.Middleware.Logger, debug: true, level: &log_level/1}
+      ],
+      {Tesla.Adapter.Finch, name: TeslaMate.HTTP, receive_timeout: 30_000}
+    )
+  end
 
   defp get(url, opts), do: Tesla.get(client(), url, opts)
 
